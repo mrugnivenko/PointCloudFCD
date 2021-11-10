@@ -2,7 +2,6 @@ after_container_restart.ipynb
 checkpoints/
 dataset_ready_to_use/
 Dockerfile
-Draft.ipynb
 Experiment_FCD_crop_fine_tune_folded-Copy1.ipynb
 Experiment_FCD_crop_fine_tune.ipynb
 Experiment_FCD_crop.ipynb
