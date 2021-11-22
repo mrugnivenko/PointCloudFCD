@@ -1,79 +1,60 @@
-import torch
 import numpy as np
+import pandas as pd
+from data_processor import load_nii_to_array
+from crop import *
 
+def score(descending_probability_and_amount_of_fcd: list) -> np.float:
+    idx = next((index for index,
+                value in enumerate(descending_probability_and_amount_of_fcd) if value != 0), None)
+    if idx == None:
+        return 0
+    else:
+        return (10-idx)*10
+    
+def calculate_score(brain_path: str,
+                    prediction_path: str,
+                    label_path: str,
+                    crop_size = 64,
+                    step_size = 64) -> float:
+    
+    brain = np.load(brain_path)
+    prediction = load_nii_to_array(prediction_path)
+    label = np.load(label_path)
+    
+    if label.sum() == 0:
+        return None
+    
+    sagittal_shape, coronal_shape, axial_shape = brain.shape
+    
+    deltas = []
+    for shape in [sagittal_shape, coronal_shape, axial_shape]:
+        if shape % crop_size != 0:
+            deltas.append((0, (shape // crop_size + 1) * crop_size - shape))
+        else:
+            deltas.append((0, 0))
 
-def get_dice_score(output, target, SPATIAL_DIMENSIONS=(2, 3, 4), epsilon=1e-9):
-    '''
-    Function gets dice score on output and target tensors
-    https://www.jeremyjordan.me/semantic-segmentation/#loss
+    brain = np.pad(brain, deltas, "constant", constant_values=0)
+    prediction = np.pad(prediction, deltas, "constant", constant_values=0)
+    label = np.pad(label, deltas, "constant", constant_values=0)
 
-    Arguments:
-        * output (torch.tensor): (1,2,X,Y,Z) probabilities tensor, one component
-        is probability-tensor (1,X,Y,Z) to be the brain, another component
-        is probability-tensor (1,X,Y,Z) to be background.
-        In general the shape of the tensor is (N, 2, X, Y, Z), where N is batch size
-        * target (torch.tensor): (1,2,X,Y,Z)  binary tensor, one component
-        is binary-mask (1,X,Y,Z) for the brain, another component
-        is binary-mask (1,X,Y,Z) for the background.
-        In general the shape of the tensor is (N, 2, X, Y, Z), where N is batch size
-        * SPATIAL_DIMENSIONS (typle): typle with indexes corresponding to spatial parts of tensors
-        * epsilon (float): a small number used for numerical stability to avoid divide by zero errors
+    _, center_coords = get_inference_crops(
+        {'brains': brain}, crop_size=crop_size, step_size=step_size
+    )
+    
+    df = pd.DataFrame(columns=['probability', 'is_fcd'])
 
-    Outputs:
-        * dice score (torch.tensor): tensor with dice score for every class on the image
-    '''
+    for i, crop_point in enumerate(center_coords):
+        pred_crop = prediction[crop_point[0]:crop_point[0]+crop_size,
+                               crop_point[1]:crop_point[1]+crop_size,
+                               crop_point[2]:crop_point[2]+crop_size,
+                              ]
 
-    p0 = output
-    g0 = target
-    p1 = 1 - p0
-    g1 = 1 - g0
-
-    tp = (p0 * g0).sum(dim=SPATIAL_DIMENSIONS)
-    fp = (p0 * g1).sum(dim=SPATIAL_DIMENSIONS)
-    fn = (p1 * g0).sum(dim=SPATIAL_DIMENSIONS)
-
-    num = 2 * tp
-    denom = 2 * tp + fp + fn
-
-    dice_score = (num + epsilon) / (denom + epsilon)
-
-    return dice_score
-
-
-def get_dice_loss(output, target):
-    '''
-    Function gets dice score loss on output and target tensors
-
-    Arguments:
-        * output (torch.tensor):  (1,2,X,Y,Z) probabilities tensor, one component
-        is probability-tensor (1,X,Y,Z) to be the brain, another component
-        is probability-tensor (1,X,Y,Z) to be background.
-        In general the shape of the tensor is (N, 2, X, Y, Z), where N is batch size
-        * target (torch.tensor): (1,2,X,Y,Z) binary tensor, one component
-        is binary-mask (1,X,Y,Z) for the brain, another component
-        is binary-mask (1,X,Y,Z) for the background.
-        In general the shape of the tensor is (N, 2, X, Y, Z), where N is batch size
-
-    Outputs:
-        * dice score loss (torch.tensor): tensor with dice score loss for every class on the image
-    '''
-    return 1 - get_dice_score(output, target)
-
-
-def get_iou_score(prediction, ground_truth):
-    '''
-    Fucntion computes IoU of prediction of target and ground truth target
-
-    Arguments:
-        * prediction (np.array): predicted segmentation (with or without mask, whatever)
-        * ground_truth (np.array):ground truth segmentation
-
-    Outputs:
-        * iou_score (float): IoU score
-
-    '''
-    intersection, union = 0, 0
-    intersection += np.logical_and(prediction > 0, ground_truth > 0).astype(np.float32).sum()
-    union += np.logical_or(prediction > 0, ground_truth > 0).astype(np.float32).sum()
-    iou_score = float(intersection) / union
-    return iou_score
+        label_crop = label[crop_point[0]:crop_point[0]+crop_size,
+                         crop_point[1]:crop_point[1]+crop_size,
+                         crop_point[2]:crop_point[2]+crop_size,
+                        ]
+        
+        df.loc[i] = [pred_crop.sum(), label_crop.sum()]
+        
+    df = df.sort_values(by='probability', ascending=False)[:10]
+    return score(df.is_fcd.tolist())
