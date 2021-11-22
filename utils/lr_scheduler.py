@@ -1,7 +1,6 @@
 # noinspection PyProtectedMember
 from torch.optim.lr_scheduler import _LRScheduler, MultiStepLR, CosineAnnealingLR
 
-
 # noinspection PyAttributeOutsideInit
 class GradualWarmupScheduler(_LRScheduler):
     """ Gradually warm-up(increasing) learning rate in optimizer.
@@ -61,7 +60,7 @@ class GradualWarmupScheduler(_LRScheduler):
         self.__dict__.update(state_dict)
         self.after_scheduler.load_state_dict(after_scheduler_state)
 
-
+        
 def get_scheduler(optimizer, n_iter_per_epoch, args):
     if "cosine" in args.lr_scheduler:
         scheduler = CosineAnnealingLR(

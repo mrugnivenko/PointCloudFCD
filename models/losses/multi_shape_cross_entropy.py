@@ -29,38 +29,37 @@ class DiceBCELoss(nn.Module):
         return Dice_BCE
 
 class MultiShapeCrossEntropy(nn.Module):
-    def __init__(self, num_classes, type = 'MultiShape', weights = None):
+    def __init__(self, num_classes: int, type: str = 'MultiShape', weights = None):
         super(MultiShapeCrossEntropy, self).__init__()
+        """
+        Class implements different loss functions
+        
+        :params num_classes: int, number of classes 
+        :params type: str, type of loss function
+        :params weights: list, a manual rescaling weights given to each class, used in BCE loss
+        """
+        
         self.type = type
-        self.num_classes = num_classes
+        
         if weights is not None:
             self.bce = torch.nn.CrossEntropyLoss(torch.tensor(weights).float().cuda())
         else:
             self.bce = torch.nn.CrossEntropyLoss()
+            
         self.dice = DiceBCELoss(weights=weights)
 
-    def forward(self, logits_all_shapes, points_labels, shape_labels, coords = None):
-        if self.type=='MultiShape':
-            batch_size = shape_labels.shape[0]
-            losses = 0
-            for i in range(batch_size):
-                sl = shape_labels[i]
-                logits = torch.unsqueeze(logits_all_shapes[sl][i], 0)
-                pl = torch.unsqueeze(points_labels[i], 0)
-                loss = F.cross_entropy(logits, pl)
-                losses += loss
-                for isl in range(self.num_classes):
-                    if isl == sl:
-                        continue
-                    losses += 0.0 * logits_all_shapes[isl][i].sum()
-
-            return losses / batch_size
+    def forward(self, logits_all_shapes, points_labels):
+        """
+        Function for loss calculation 
         
-        elif self.type=='BCE':
-            logits_all_shapes1 = logits_all_shapes[0].permute(0, 2, 1)
-            logits_all_shapes1 = logits_all_shapes1.reshape(-1, logits_all_shapes1.shape[-1])
-            points_labels = points_labels.view(-1)
-            return self.bce(logits_all_shapes1, points_labels)
+        :params logits_all_shapes: tuple, logits_all_shapes[0] is torch.tensor with unnormalized prediction of the model with size [batch_size, 2, number_of_points]
+        :params points_labels: torch.tensor, tensor of shape [batch_size, number_of_points] with 0 and 1, contains 1 for FCD point and 0 for non-FCD
         
-        elif self.type=='DICE':
-            return self.dice(logits_all_shapes[0], points_labels)
+        :outputs loss: torch.tensor, loss
+        """
+                
+        if self.type == 'BCE':
+            return self.bce(logits_all_shapes[0], points_labels)
+        
+        elif self.type == 'DICE':
+            return self.dice(logits_all_shapes, points_labels)

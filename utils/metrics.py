@@ -1,9 +1,3 @@
-'''
-Description of the following fucntions:
-    * get_dice_score
-    * get_dice_loss
-'''
-
 import torch
 import numpy as np
 

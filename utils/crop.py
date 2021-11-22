@@ -369,7 +369,7 @@ class BrainDataSegCrop:
         num_points=2048,
         transforms=None,
         return_center=False,
-        is_folded=False,
+        is_folded=True,
         data_dict={},
         return_min_point_train=True,
         return_air_mask_test=False,
@@ -613,7 +613,7 @@ class BrainDataSegCrop:
             return len(self.labels)
 
 
-def dataset_to_best_weights(dataset, repeats=2):
+def dataset_to_best_weights(dataset, features: list, repeats: int = 2):
     """ 
     Function computes means and stds for all types of data for further normalization. Also it computes 
     weights for weighted loss function according to quantity of positive class.
@@ -627,29 +627,17 @@ def dataset_to_best_weights(dataset, repeats=2):
     """
 
     means = []
+    dict_means = {feature: [] for feature in features}
+    dict_stds = {feature: [] for feature in features}
+    dict_features_to_numbers = {feature: i+3 for i, feature in enumerate(features)}
     
-#     dict_means = {"brains": [], "curvs": [], "thickness": [], "sulc": []}
-#     dict_stds = {"brains": [], "curvs": [], "thickness": [], "sulc": []}
-    dict_means = {"brains": []}
-    dict_stds = {"brains": []}
     for _ in range(repeats):
         for element in dataset:
             points_labels = element["current_points_labels"]
             current_points = element["current_points"]
-
-            dict_means["brains"].append(torch.mean(current_points[:, 3]).detach().cpu())
-            #             dict_means["curvs"].append(torch.mean(current_points[:, 4]).detach().cpu())
-            #             dict_means["thickness"].append(
-            #                 torch.mean(current_points[:, 5]).detach().cpu()
-            #             )
-            #             dict_means["sulc"].append(torch.mean(current_points[:, 6]).detach().cpu())
-
-            dict_stds["brains"].append(torch.std(current_points[:, 3]).detach().cpu())
-            #             dict_stds["curvs"].append(torch.std(current_points[:, 4]).detach().cpu())
-            #             dict_stds["thickness"].append(
-            #                 torch.std(current_points[:, 5]).detach().cpu()
-            #             )
-            #             dict_stds["sulc"].append(torch.std(current_points[:, 6]).detach().cpu())
+            for key in features:
+                dict_means[key].append(torch.mean(current_points[:, dict_features_to_numbers[key]]).detach().cpu())
+                dict_stds[key].append(torch.std(current_points[:, dict_features_to_numbers[key]]).detach().cpu())
 
             means.append(np.mean(np.array(points_labels.detach().cpu())))
             del element, points_labels, current_points
@@ -669,7 +657,7 @@ def get_loader_crop(
     crop_size=64,
     train_dict={},
     test_dict={},
-    is_folded=False,
+    is_folded=True,
     return_min_point_train=True,
     return_abs_coords=False,
     return_pc_without_air_points=False,
@@ -731,8 +719,10 @@ def get_loader_crop(
     )
 
     if weighted_loss:
-        weights, MEANS, STDS = dataset_to_best_weights(train_dataset)
+        weights, MEANS, STDS = dataset_to_best_weights(train_dataset, [x for x in train_dict.keys() if 'labels' not in x])
         print(f"Weights are: {weights}")
+        print(f"MEANS are: {MEANS}")
+        print(f"STDS are: {STDS}")
         
         train_dataset = BrainDataSegCrop(
             num_points=num_points,

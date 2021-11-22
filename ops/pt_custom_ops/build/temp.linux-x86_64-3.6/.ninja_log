@@ -1,0 +1,10 @@
+# ninja log v5
+2	13111	1637483999146321657	/code/PointCloudResNet/ops/pt_custom_ops/build/temp.linux-x86_64-3.6/_ext_src/src/masked_nearest_query_gpu.o	c5df1937b4c5823a
+2	14530	1637484000566302473	/code/PointCloudResNet/ops/pt_custom_ops/build/temp.linux-x86_64-3.6/_ext_src/src/group_points_gpu.o	97914724f5e0fba5
+1	17344	1637484003374264540	/code/PointCloudResNet/ops/pt_custom_ops/build/temp.linux-x86_64-3.6/_ext_src/src/masked_grid_subsampling_gpu.o	8278e5fb3783e505
+1	17454	1637484003490262974	/code/PointCloudResNet/ops/pt_custom_ops/build/temp.linux-x86_64-3.6/_ext_src/src/group_points.o	671f235ea6e2ae02
+0	19176	1637484005210239738	/code/PointCloudResNet/ops/pt_custom_ops/build/temp.linux-x86_64-3.6/_ext_src/src/masked_grid_subsampling.o	69cfa9c2c2c9fcc1
+0	20371	1637484006402223635	/code/PointCloudResNet/ops/pt_custom_ops/build/temp.linux-x86_64-3.6/_ext_src/src/masked_ordered_ball_query.o	8baff2e0a8598b56
+0	20394	1637484006426223312	/code/PointCloudResNet/ops/pt_custom_ops/build/temp.linux-x86_64-3.6/_ext_src/src/masked_nearest_query.o	1333d307d3bc43a6
+1	21479	1637484007506208723	/code/PointCloudResNet/ops/pt_custom_ops/build/temp.linux-x86_64-3.6/_ext_src/src/masked_ordered_ball_query_gpu.o	e4e0d0f4fdbcc331
+1	21949	1637484007978202345	/code/PointCloudResNet/ops/pt_custom_ops/build/temp.linux-x86_64-3.6/_ext_src/src/bindings.o	dd954e0e3bd202f2

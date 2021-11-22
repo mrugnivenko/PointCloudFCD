@@ -20,3 +20,5 @@ requirements.txt
 results/
 test.npy
 tmp/
+*/__pycache__/*
+experiments/
