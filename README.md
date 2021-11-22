@@ -1,4 +1,4 @@
-# Point Cloud based architecture for FCD detection problem
+# Point Cloud based architecture for FCD detection
 
 ## Installation
 ### Compile custom operators
