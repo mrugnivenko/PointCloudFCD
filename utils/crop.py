@@ -419,10 +419,9 @@ class BrainDataSegCrop:
             self.data_dict = data_dict
 
         elif task == "test":
+            data_dict_loaded = {}
             for key in data_dict.keys():
-                data_dict[key] = [
-                    np.load(el, allow_pickle=True) for el in data_dict[key]
-                ]
+                data_dict_loaded[key] = [np.load(data_dict[key], allow_pickle=True)]
 
             self.center_coords = []
             self.points = []
@@ -431,8 +430,8 @@ class BrainDataSegCrop:
             if return_air_mask_test or return_pc_without_air_points:
                 self.air_masks = []
 
-            for idx in range(len(data_dict["brains"])):
-                sagittal_shape, coronal_shape, axial_shape = data_dict["brains"][
+            for idx in range(len(data_dict_loaded["brains"])):
+                sagittal_shape, coronal_shape, axial_shape = data_dict_loaded["brains"][
                     idx
                 ].shape
 
@@ -444,16 +443,16 @@ class BrainDataSegCrop:
                         deltas.append((0, 0))
 
                 single_data_dict = {}
-                for key in data_dict.keys():
+                for key in data_dict_loaded.keys():
                     single_data_dict[key] = np.pad(
-                        data_dict[key][idx], deltas, "constant", constant_values=0
+                        data_dict_loaded[key][idx], deltas, "constant", constant_values=0
                     )
 
                 single_data_dict, center_coords = get_inference_crops(
                     single_data_dict, crop_size=crop_size, step_size=step_size
                 )
 
-                if return_center or return_abs_coords:
+                if return_abs_coords:
                     self.center_coords += center_coords
 
                 points_labels = [
@@ -723,6 +722,11 @@ def get_loader_crop(
         print(f"Weights are: {weights}")
         print(f"MEANS are: {MEANS}")
         print(f"STDS are: {STDS}")
+            
+        config['MEANS'] = MEANS
+        config['STDS'] = STDS
+        with open(f'../experiments/{config.EXP_NAME}/config.json', 'w') as file:
+            json.dump(config, file)
         
         train_dataset = BrainDataSegCrop(
             num_points=num_points,

@@ -29,7 +29,7 @@ class DiceBCELoss(nn.Module):
         return Dice_BCE
 
 class MultiShapeCrossEntropy(nn.Module):
-    def __init__(self, num_classes: int, type: str = 'MultiShape', weights = None):
+    def __init__(self, num_classes: int, type: str = 'BCE', weights = None):
         super(MultiShapeCrossEntropy, self).__init__()
         """
         Class implements different loss functions
