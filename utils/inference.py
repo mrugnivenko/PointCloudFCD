@@ -28,7 +28,7 @@ def inference(config, all_data_dict, kf, num_votes=1, repeat=1):
             model.eval()
             model.cuda()
 
-            data_loaders = [BrainDataSegCrop(num_points=config.num_points,
+            data_loaders = [BrainDataSegCrop(config=config, num_points=config.num_points,
                                             task='test',
                                             data_dict = test_dict,
                                             crop_size = config.CROP_SIZE,

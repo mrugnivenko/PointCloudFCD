@@ -1,5 +1,6 @@
 import imp
 import torch
+import json
 import random
 import pickle
 import numpy as np
@@ -7,6 +8,8 @@ from tqdm import tqdm
 from torchvision import transforms
 from numpy.random import default_rng
 import datasets.data_utils as d_utils
+from easydict import EasyDict as edict
+from utils.data_processor import *
 
 
 def make_coin_flip(threshold: float = 0.7) -> bool:
@@ -363,6 +366,7 @@ class BrainDataSegCrop:
 
     def __init__(
         self,
+        config,
         task="train",
         crop_size=64,
         step_size=None,
@@ -376,8 +380,8 @@ class BrainDataSegCrop:
         return_abs_coords=False,
         return_pc_without_air_points=False,
         coin_flip_threshold=0.7,
-        MEANS={"brains": 0, "curvs": 0, "thickness": 0, "sulc": 0},
-        STDS={"brains": 1, "curvs": 1, "thickness": 1, "sulc": 1},
+        MEANS={"brains": 0, "curv": 0, "thickness": 0, "sulc": 0},
+        STDS={"brains": 1, "curv": 1, "thickness": 1, "sulc": 1},
     ):
 
         """
@@ -397,7 +401,8 @@ class BrainDataSegCrop:
         :params MEANS: dict, dictionary with means of the data for normalization
         :params STDS: dict, dictionary with stds of the data for normalization
         """
-
+        
+        self.config = config
         self.task = task
         self.crop_size = crop_size
 
@@ -421,7 +426,9 @@ class BrainDataSegCrop:
         elif task == "test":
             data_dict_loaded = {}
             for key in data_dict.keys():
-                data_dict_loaded[key] = [np.load(data_dict[key], allow_pickle=True)]
+                data_dict_loaded[key] = [load_nii_to_array(data_dict[key])]
+            if not self.config.SMART_SAMPLING:
+                data_dict_loaded['labels'] = [(data_dict_loaded['labels'][0]>0).astype(np.int8)]
 
             self.center_coords = []
             self.points = []
@@ -494,10 +501,14 @@ class BrainDataSegCrop:
             rng = default_rng()
             
             single_data_dict = {key: self.data_dict[key][idx] for key in self.data_dict}
+            
             for key in single_data_dict:
-                single_data_dict[key] = np.load(
-                    single_data_dict[key], allow_pickle=True
+                single_data_dict[key] = load_nii_to_array(
+                    single_data_dict[key]
                 )
+            if not self.config.SMART_SAMPLING:
+                single_data_dict['labels'] = (single_data_dict['labels']>0).astype(np.int8)
+                    
             for key in single_data_dict:
                 single_data_dict[key] = np.pad(
                     single_data_dict[key],
@@ -643,8 +654,8 @@ def dataset_to_best_weights(dataset, features: list, repeats: int = 2):
     mean = np.mean(means)
 
     for key in dict_means:
-        dict_means[key] = np.mean(dict_means[key])
-        dict_stds[key] = np.mean(dict_stds[key])
+        dict_means[key] = float(np.mean(dict_means[key]))
+        dict_stds[key] = float(np.mean(dict_stds[key]))
 
     return [mean, 1 - mean], dict_means, dict_stds
 
@@ -705,6 +716,7 @@ def get_loader_crop(
     )
 
     train_dataset = BrainDataSegCrop(
+        config=config,
         num_points=num_points,
         task="train",
         crop_size=crop_size,
@@ -725,10 +737,14 @@ def get_loader_crop(
             
         config['MEANS'] = MEANS
         config['STDS'] = STDS
-        with open(f'../experiments/{config.EXP_NAME}/config.json', 'w') as file:
+        
+        config = edict(config)
+
+        with open(f'experiments/{config.EXP_NAME}/config.json', 'w') as file:
             json.dump(config, file)
         
         train_dataset = BrainDataSegCrop(
+            config=config,
             num_points=num_points,
             task="train",
             crop_size=crop_size,
@@ -746,6 +762,7 @@ def get_loader_crop(
     print("Train dataset created")
 
     test_dataset = BrainDataSegCrop(
+        config=config,
         num_points=num_points,
         task="train",
         crop_size=crop_size,
