@@ -1,7 +1,8 @@
-import torch
 import numpy as np
+import torch
 import torch.distributed as dist
 from sklearn.metrics import confusion_matrix
+
 
 class AverageMeter(object):
     """Computes and stores the average and current value"""
@@ -25,11 +26,13 @@ class AverageMeter(object):
         self.count += n
         self.avg = self.sum / self.count
 
+
 def reduce_tensor(tensor):
     rt = tensor.clone()
     dist.all_reduce(rt, op=dist.ReduceOp.SUM)
     rt /= dist.get_world_size()
     return rt
+
 
 def get_confusion_matrix(num_classes, num_parts, objects, preds, targets, masks):
     """
@@ -41,10 +44,10 @@ def get_confusion_matrix(num_classes, num_parts, objects, preds, targets, masks)
         targets: [(num_points)]
         masks: [(num_points)]
     """
-    
+
     total_correct = 0.0
     total_seen = 0.0
-    
+
     Confs = []
     for obj, cur_pred, cur_gt, cur_mask in zip(objects, preds, targets, masks):
         obj = int(obj)
@@ -59,5 +62,5 @@ def get_confusion_matrix(num_classes, num_parts, objects, preds, targets, masks)
         Confs += [confusion_matrix(cur_gt, cur_pred, labels=parts)]
 
     Confs = np.array(Confs)
-    
+
     return np.sum(Confs, axis=0)

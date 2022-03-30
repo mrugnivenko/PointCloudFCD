@@ -1,11 +1,7 @@
-dataset_ready_to_use/
-Dockerfile
-interpolate/
 .ipynb_checkpoints
 */.ipynb_checkpoints/*
-raw_data/
 */__pycache__/*
 experiments/
 radiologist/
 analysis/
-examples_of_work/
+data/

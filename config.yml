@@ -1,0 +1,252 @@
+############################## Configuration for data. ##############################
+
+# Path to data.
+path_to_data: 'data'
+
+# Path to allowed subjects.
+path_to_allowed_subjects: 'data/kfolds/temporal/t1_brain_curv/subjects.npy'
+
+# Allowed subjects.
+subjects: 
+    - ''
+
+# Which features to take for training.
+features:
+    - 'brains'
+    - 'curv'
+
+# Path to file with fold division.
+path_to_folds: 'data/kfolds/temporal/t1_brain_curv/kfold_division.json'
+
+# Means of feaures for normalization.
+MEANS: {}
+
+# Stds of feaures for normalization.
+STDS: {}
+
+# Modality of brains.
+brains_modality: 't1'
+
+# Size of brains.
+size:
+    - 241
+    - 293
+    - 247 
+
+# Crop size.
+crop_size: 64
+
+# Number of points in the Point Cloud.
+num_points: 4096
+
+# 
+x_angle_range: 0.05 
+
+# 
+y_angle_range: 0.05 
+
+# 
+z_angle_range: 0.05 
+
+# 
+scale_low: 0.95 
+
+# 
+scale_high: 1.1 
+
+# 
+noise_std: 0.001
+
+# 
+noise_clip: 0.05
+
+# 
+translate_range: 0.0 
+
+# 
+color_drop: 0.2 
+
+# 
+augment_symmetries: 
+    - 0
+    - 0
+    - 0
+
+# 
+in_radius: 2.0 
+
+# 
+num_steps: 500
+
+# Dataset name.
+datasets: 'braindata'
+
+# 
+data_root: ''
+
+# Number of classes for segmentation.
+num_parts: 
+    - 2
+
+# Dimension of a point in the Point Cloud.
+input_features_dim: 3
+
+#
+num_classes: 1
+
+
+############################## Configuration for model. ##############################
+
+# Backbone for segmentation. 
+backbone: 'resnet'
+
+# Head for segmentation.
+head: 'resnet_part_seg'
+
+# 
+radius: 0.5 
+
+#
+sampleDl: 0.2 
+
+#
+density_parameter: 5.0 
+
+#
+nsamples: 
+  - 11
+  - 25
+  - 37
+  - 36
+  - 33
+
+#
+npoints: 
+  - 2560
+  - 1536
+  - 384
+  - 128
+
+# 
+width: 144
+
+#
+depth: 2
+
+#
+bottleneck_ratio: 2
+
+#
+bn_momentum: 0.1 
+ 
+
+############################## Configuration for training. ##############################
+
+# Whether to log results of training or not.
+is_experiment: True
+
+# Name of experiment.
+name_of_experiment: ''
+
+# Number of epochs for training.
+epochs: 10
+
+# Starting epoch.
+start_epoch: 1 
+
+# Device for training.
+device: 0
+
+# Number of workers in dataloader.
+num_workers: 4
+
+# Whether to use absolute coordinates of points or relative ones. 
+is_return_absolute_coordinates: True
+
+# Whether to use only meaningful points, which are not air-points.
+get_rid_of_air_points: False
+
+# Percent of False return (take crop inside FCD region) in flip of biased coin.
+coin_flip_threshold: 0.8
+
+# Type of loss function.
+loss: 'BCE'
+
+# Whether to calculate weights for weighted loss function according to the quantity of positive class or not.
+weighted_loss: True
+
+# Batch size
+batch_size: 16
+
+# Starting learning rate.
+base_learning_rate: 0.002 
+
+# Sheduler for learning rate.
+lr_scheduler: 'cosine'  # step,cosine 
+
+# Optimizer.
+optimizer: 'adamW'
+
+#
+warmup_epoch: -1
+
+#
+warmup_multiplier: 100
+
+#
+lr_decay_steps: 1
+
+#
+lr_decay_rate:  0.9885531 
+
+#
+weight_decay: 0.00001
+
+#
+momentum: 0.9 
+
+#
+grid_clip_norm : -1
+
+
+############################## Configuration for IO. ##############################
+    
+#
+load_path: ''
+
+#
+print_freq: 10
+
+#
+save_freq: 10
+
+#
+val_freq: 2
+
+#
+log_dir: './output'
+
+#
+local_rank: 0
+
+#
+amp_opt_level: ''
+
+#
+rng_seed: 0
+    
+    
+############################## Configuration for Local Aggregation. ##############################
+# Type of local aggregation.
+local_aggregation_type: 'pospool'
+
+pospool:
+
+    # 
+    position_embedding: 'xyz'
+
+    # Type of reduction.
+    reduction: 'avg'
+
+    #
+    output_conv: False 

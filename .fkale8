@@ -1,0 +1,26 @@
+[flake8]
+ignore =
+    # E203	Whitespace before ':' (because we use black)
+    E203,
+    # W503	Line break occurred before a binary operator (because we use black)
+    W503,
+    DUO102,
+
+    # Sometimes using uppercase variables is okay for DS puproses.
+    N812
+
+exclude =
+    __pycache__,
+    .eggs
+    .git
+    .hg
+    .mypy_cache
+    .tox
+    .venv
+    venv
+    _build
+    buck-out
+    build
+    .ipynb_checkpoints
+
+max-line-length = 88

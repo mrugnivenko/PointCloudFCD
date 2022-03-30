@@ -1,21 +1,25 @@
 # noinspection PyProtectedMember
-from torch.optim.lr_scheduler import _LRScheduler, MultiStepLR, CosineAnnealingLR
+from torch.optim.lr_scheduler import (CosineAnnealingLR, MultiStepLR,
+                                      _LRScheduler)
+
 
 # noinspection PyAttributeOutsideInit
 class GradualWarmupScheduler(_LRScheduler):
-    """ Gradually warm-up(increasing) learning rate in optimizer.
-      Proposed in 'Accurate, Large Minibatch SGD: Training ImageNet in 1 Hour'.
-      Args:
-          optimizer (Optimizer): Wrapped optimizer.
-          multiplier: init learning rate = base lr / multiplier
-          warmup_epoch: target learning rate is reached at warmup_epoch, gradually
-          after_scheduler: after target_epoch, use this scheduler(eg. ReduceLROnPlateau)
-      """
+    """Gradually warm-up(increasing) learning rate in optimizer.
+    Proposed in 'Accurate, Large Minibatch SGD: Training ImageNet in 1 Hour'.
+    Args:
+        optimizer (Optimizer): Wrapped optimizer.
+        multiplier: init learning rate = base lr / multiplier
+        warmup_epoch: target learning rate is reached at warmup_epoch, gradually
+        after_scheduler: after target_epoch, use this scheduler(eg. ReduceLROnPlateau)
+    """
 
-    def __init__(self, optimizer, multiplier, warmup_epoch, after_scheduler, last_epoch=-1):
+    def __init__(
+        self, optimizer, multiplier, warmup_epoch, after_scheduler, last_epoch=-1
+    ):
         self.multiplier = multiplier
-        if self.multiplier <= 1.:
-            raise ValueError('multiplier should be greater than 1.')
+        if self.multiplier <= 1.0:
+            raise ValueError("multiplier should be greater than 1.")
         self.warmup_epoch = warmup_epoch
         self.after_scheduler = after_scheduler
         self.finished = False
@@ -25,8 +29,12 @@ class GradualWarmupScheduler(_LRScheduler):
         if self.last_epoch > self.warmup_epoch:
             return self.after_scheduler.get_lr()
         else:
-            return [base_lr / self.multiplier * ((self.multiplier - 1.) * self.last_epoch / self.warmup_epoch + 1.)
-                    for base_lr in self.base_lrs]
+            return [
+                base_lr
+                / self.multiplier
+                * ((self.multiplier - 1.0) * self.last_epoch / self.warmup_epoch + 1.0)
+                for base_lr in self.base_lrs
+            ]
 
     def step(self, epoch=None):
         if epoch is None:
@@ -44,8 +52,12 @@ class GradualWarmupScheduler(_LRScheduler):
         is not the optimizer.
         """
 
-        state = {key: value for key, value in self.__dict__.items() if key != 'optimizer' and key != 'after_scheduler'}
-        state['after_scheduler'] = self.after_scheduler.state_dict()
+        state = {
+            key: value
+            for key, value in self.__dict__.items()
+            if key != "optimizer" and key != "after_scheduler"
+        }
+        state["after_scheduler"] = self.after_scheduler.state_dict()
         return state
 
     def load_state_dict(self, state_dict):
@@ -56,23 +68,30 @@ class GradualWarmupScheduler(_LRScheduler):
                 from a call to :meth:`state_dict`.
         """
 
-        after_scheduler_state = state_dict.pop('after_scheduler')
+        after_scheduler_state = state_dict.pop("after_scheduler")
         self.__dict__.update(state_dict)
         self.after_scheduler.load_state_dict(after_scheduler_state)
 
-        
+
 def get_scheduler(optimizer, n_iter_per_epoch, args):
     if "cosine" in args.lr_scheduler:
         scheduler = CosineAnnealingLR(
             optimizer=optimizer,
             eta_min=0.000001,
-            T_max=(args.epochs - args.warmup_epoch) * n_iter_per_epoch)
+            T_max=(args.epochs - args.warmup_epoch) * n_iter_per_epoch,
+        )
     elif "step" in args.lr_scheduler:
-        lr_decay_epochs = [args.lr_decay_steps * i for i in range(1, args.epochs // args.lr_decay_steps)]
+        lr_decay_epochs = [
+            args.lr_decay_steps * i
+            for i in range(1, args.epochs // args.lr_decay_steps)
+        ]
         scheduler = MultiStepLR(
             optimizer=optimizer,
             gamma=args.lr_decay_rate,
-            milestones=[(m - args.warmup_epoch) * n_iter_per_epoch for m in lr_decay_epochs])
+            milestones=[
+                (m - args.warmup_epoch) * n_iter_per_epoch for m in lr_decay_epochs
+            ],
+        )
     else:
         raise NotImplementedError(f"scheduler {args.lr_scheduler} not supported")
 
@@ -81,5 +100,6 @@ def get_scheduler(optimizer, n_iter_per_epoch, args):
             optimizer,
             multiplier=args.warmup_multiplier,
             after_scheduler=scheduler,
-            warmup_epoch=args.warmup_epoch * n_iter_per_epoch)
+            warmup_epoch=args.warmup_epoch * n_iter_per_epoch,
+        )
     return scheduler
